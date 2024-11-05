@@ -61,7 +61,7 @@ fn main() {
     let real_width = width as u32;
 
     // Limite d'actualisation à 60 FPS
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    window.set_target_fps(60);
 
     // Boucle principale
     while window.is_open() && !window.is_key_down(Key::Escape) {
