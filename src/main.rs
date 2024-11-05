@@ -1,26 +1,22 @@
-use std::os::windows::io::HandleOrInvalid;
-
 use minifb::{Key, Window, WindowOptions};
 
+
 struct Vaisseau {
-    x : u32,
-    y : u32,
-    dx : u32,
-    dy : u32,
+    x : f32,
+    y : f32,
+    dx : f32,
     width : u32,
     height : u32,
 }
 
 impl Vaisseau {
+
     pub fn draw(&self, buf : &mut Vec<u32>, width_screen: &u32) {
-        draw_rect(buf, self.x, self.y, width_screen, self.width, self.height, 0x000000);
-        draw_rect(buf, self.x, self.y, width_screen, self.width, self.height, 0xFF0000);
+        draw_rect(buf, self.x as u32, self.y as u32, width_screen, self.width, self.height, 0x000000);
     }
-    pub fn update(&self) {
-        
-    }
-    
-}
+
+    //pub fn update(&mut self, window : &Window, width_screen: &u32) {}
+}    
 
 fn draw_pixel(buf: &mut Vec<u32>, x: u32, y: u32, width: &u32, colour : u32) {
     // Calculer l'index uniquement si (x, y) est dans les limites du buffer
@@ -39,34 +35,71 @@ fn draw_rect(buf : &mut Vec<u32>, x : u32, y : u32, width_screen: &u32, width : 
 }
 
 
-fn main() {
-    // Dimensions de la fenêtre
-    let width: usize = 640;
-    let height = 360;
+struct Jeu {
+    width : u32,
+    height : u32,
+    buffer : Vec<u32>,
+    window : Window,
+    fps : usize,
+    player : Vaisseau,
+}
 
-    // Création du framebuffer avec une couleur fixe (rouge ici)
-    let buffer: Vec<u32> = vec![0xFF0000; width * height]; // 0xFF0000 = rouge
+impl Jeu {
 
-    // Création de la fenêtre
-    let mut window = Window::new(
-        "Exemple minifb - Cliquez pour quitter",
-        width,
-        height,
-        WindowOptions::default(),
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+    pub fn new(width: u32, height: u32, fps: usize, player: Vaisseau) -> Self {
+        let buffer = vec![0; (width * height) as usize];
+        let mut  window = Window::new(
+            "Jeu",
+            width as usize,
+            height as usize,
+            WindowOptions::default(),
+        ).unwrap_or_else(|e| {
+            panic!("{}", e);
+        });
+        window.set_target_fps(fps);
+        Self {
+            width,
+            height,
+            buffer,
+            window,
+            fps,
+            player,
+        }
+    }
 
-    let real_width = width as u32;
 
-    // Limite d'actualisation à 60 FPS
-    window.set_target_fps(60);
-
-    // Boucle principale
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        // Mettre à jour le contenu de la fenêtre avec le framebuffer
-        window.update_with_buffer(&buffer, width, height).unwrap();
+    pub fn run(&mut self){
+        while self.window.is_open() && !self.window.is_key_down(Key::Escape) {
+            self.update();
+            // Mettre à jour le contenu de la fenêtre avec le framebuffer
+            self.buffer = vec![0xFF0000; self.width as usize * self.height as usize];
+            self.player.draw(&mut self.buffer, &self.width);
+            //self.player.update(&self.window, &self.width);
+            self.window.update_with_buffer(&self.buffer, self.width as usize, self.height as usize).unwrap();
+        }
+    }
+    pub fn update(&mut self){
+        for key in self.window.get_keys() {
+            match key {
+                Key::Left if (self.player.x - self.player.dx >0.0)  => self.player.x -= self.player.dx,
+                Key::Right if (self.player.x + self.player.width as f32 + self.player.dx < self.width as f32) => self.player.x += self.player.dx,
+                Key::Space => println!("Touche Espace enfoncée"),
+                _ => {}
+            }
+        }
     }
 }
 
+
+fn main() {
+
+    let player = Vaisseau {
+        x: 50.0,
+        y : 300.0,
+        dx : 5.0,
+        width : 50,
+        height : 50
+    };
+    let mut jeu_dans_main_vrai = Jeu::new(640, 360, 165, player);
+    jeu_dans_main_vrai.run(); 
+}
