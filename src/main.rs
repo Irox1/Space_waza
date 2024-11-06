@@ -1,6 +1,5 @@
 use minifb::{Key, Window, WindowOptions};
 
-
 struct Vaisseau {
     x : f32,
     y : f32,
@@ -81,7 +80,8 @@ impl Jeu {
     }
 
     pub fn new_missile(&mut self) {
-        self.liste_tirs.push( Missile{x : self.player.x  + 20 as f32, y : self.player.y - 20 as f32} );
+
+        self.liste_tirs.push(Missile{x : self.player.x  + 20 as f32, y : self.player.y - 20 as f32});
     }
 
     pub fn run(&mut self){
@@ -106,10 +106,11 @@ impl Jeu {
                 Key::Space => self.new_missile(),
                 _ => {}
             }
-        }
+        };
         for tir in &mut self.liste_tirs {
             tir.y -= 5.0;
-        }
+        };
+        self.liste_tirs.retain(|tir| tir.y > 0.0)
     }
 }
 
