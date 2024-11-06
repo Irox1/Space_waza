@@ -34,6 +34,17 @@ fn draw_rect(buf : &mut Vec<u32>, x : u32, y : u32, width_screen: &u32, width : 
     }
 }
 
+struct Missile {
+    x : f32,
+    y : f32,
+}
+
+impl Missile {
+
+    pub fn draw(&self, buf : &mut Vec<u32>, width_screen: &u32) {
+        draw_rect(buf, self.x as u32, self.y as u32, width_screen, 10, 20, 0x5DE2E7)
+    }
+}
 
 struct Jeu {
     width : u32,
@@ -42,14 +53,15 @@ struct Jeu {
     window : Window,
     fps : usize,
     player : Vaisseau,
+    liste_tirs : Vec<Missile>
 }
 
 impl Jeu {
 
-    pub fn new(width: u32, height: u32, fps: usize, player: Vaisseau) -> Self {
+    pub fn new(width: u32, height: u32, fps: usize, player: Vaisseau, liste_tirs: Vec<Missile>) -> Self {
         let buffer = vec![0; (width * height) as usize];
         let mut  window = Window::new(
-            "Jeu",
+            "Waza",
             width as usize,
             height as usize,
             WindowOptions::default(),
@@ -64,9 +76,13 @@ impl Jeu {
             window,
             fps,
             player,
+            liste_tirs,
         }
     }
 
+    pub fn new_missile(&mut self) {
+        self.liste_tirs.push( Missile{x : self.player.x  + 20 as f32, y : self.player.y - 20 as f32} );
+    }
 
     pub fn run(&mut self){
         while self.window.is_open() && !self.window.is_key_down(Key::Escape) {
@@ -75,7 +91,11 @@ impl Jeu {
             self.buffer = vec![0xFF0000; self.width as usize * self.height as usize];
             self.player.draw(&mut self.buffer, &self.width);
             //self.player.update(&self.window, &self.width);
+            for tir in &self.liste_tirs {
+                tir.draw(&mut self.buffer, &self.width);
+            }
             self.window.update_with_buffer(&self.buffer, self.width as usize, self.height as usize).unwrap();
+            
         }
     }
     pub fn update(&mut self){
@@ -83,9 +103,12 @@ impl Jeu {
             match key {
                 Key::Left if (self.player.x - self.player.dx >0.0)  => self.player.x -= self.player.dx,
                 Key::Right if (self.player.x + self.player.width as f32 + self.player.dx < self.width as f32) => self.player.x += self.player.dx,
-                Key::Space => println!("Touche Espace enfoncée"),
+                Key::Space => self.new_missile(),
                 _ => {}
             }
+        }
+        for tir in &mut self.liste_tirs {
+            tir.y -= 5.0;
         }
     }
 }
@@ -98,8 +121,8 @@ fn main() {
         y : 300.0,
         dx : 5.0,
         width : 50,
-        height : 50
+        height : 50,
     };
-    let mut jeu_dans_main_vrai = Jeu::new(640, 360, 165, player);
+    let mut jeu_dans_main_vrai = Jeu::new(640, 360, 165, player, Vec::new());
     jeu_dans_main_vrai.run(); 
 }
